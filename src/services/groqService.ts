@@ -1,3 +1,4 @@
+
 import Groq from 'groq-sdk';
 
 const groq = new Groq({
@@ -189,7 +190,7 @@ export const extractResumeDataWithAI = async (resumeText: string): Promise<Enhan
       }
     }
 
-    Extract all relevant information and organize it properly. If information is missing, leave the field empty. Return ONLY the JSON, no markdown formatting.`;
+    Extract all relevant information and organize it properly. If information is missing, leave the field empty. Return ONLY valid JSON without any explanatory text, markdown formatting, or code blocks.`;
 
     const completion = await groq.chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
@@ -205,6 +206,18 @@ export const extractResumeDataWithAI = async (resumeText: string): Promise<Enhan
     try {
       // Clean the response by removing markdown code blocks and extra whitespace
       let cleanResponse = response.trim();
+      
+      // Remove any explanatory text before JSON
+      const jsonStartIndex = cleanResponse.indexOf('{');
+      if (jsonStartIndex > 0) {
+        cleanResponse = cleanResponse.substring(jsonStartIndex);
+      }
+      
+      // Find the last closing brace to remove any text after JSON
+      const jsonEndIndex = cleanResponse.lastIndexOf('}');
+      if (jsonEndIndex > 0) {
+        cleanResponse = cleanResponse.substring(0, jsonEndIndex + 1);
+      }
       
       // Remove markdown code blocks if present
       if (cleanResponse.startsWith('```json')) {
